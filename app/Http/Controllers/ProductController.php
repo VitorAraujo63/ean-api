@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
+use App\Http\Resources\ProductResource;
+
 
 class ProductController extends Controller
 {
@@ -12,10 +14,10 @@ class ProductController extends Controller
     {
         $ean = $request->input('ean');
 
-        if (!$ean) return response()->json(['error' => 'EAN não informado.'], 400);
+        if (!$ean) return $this->errorResponse('EAN não informado.', 400);
 
         $produto = Product::where('ean', $ean)->first();
-        if ($produto) return response()->json($produto);
+        if ($produto) return $this->successResponse(new ProductResource($produto));
 
         // 1️⃣ Consulta no Cosmos
         $cosmos = Http::withHeaders([
@@ -39,7 +41,7 @@ class ProductController extends Controller
                 'complete' => true
             ]);
 
-            return response()->json($produto);
+            return $this->successResponse(new ProductResource($produto), 'Produto criado com sucesso.', 201);
         }
 
         // 2️⃣ Open Food Facts
@@ -59,7 +61,7 @@ class ProductController extends Controller
                 'complete' => false
             ]);
 
-            return response()->json($produto);
+            return $this->successResponse(new ProductResource($produto), 'Produto criado com sucesso.', 201);
         }
 
         // 3️⃣ Livros
@@ -80,10 +82,99 @@ class ProductController extends Controller
                     'complete' => false
                 ]);
 
-                return response()->json($produto);
+                return $this->successResponse(new ProductResource($produto), 'Produto criado com sucesso.', 201);
             }
         }
 
-        return response()->json(['error' => 'Produto não encontrado em nenhuma fonte.'], 404);
+        return $this->errorResponse('Produto não encontrado em nenhuma fonte.', 404);
     }
+
+        // Listar todos os produtos
+    public function index()
+    {
+        return ProductResource::collection(Product::all());
+    }
+
+    // Ver um produto específico
+    public function show($id)
+    {
+        $produto = Product::find($id);
+        if (!$produto) return response()->json(['error' => 'Produto não encontrado.'], 404);
+
+        return response()->json($produto);
+    }
+
+    // Criar produto manualmente
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'ean' => 'required|string|unique:products,ean',
+            'description' => 'nullable|string',
+            'brand' => 'nullable|string',
+            'ncm' => 'nullable|string',
+            'unit' => 'nullable|string',
+            'gross_weight' => 'nullable|numeric',
+            'net_weight' => 'nullable|numeric',
+            'image' => 'nullable|string',
+            'source' => 'nullable|string',
+            'type' => 'nullable|string',
+            'complete' => 'nullable|boolean',
+        ]);
+
+        $produto = Product::create($validated);
+        return new ProductResource($produto);
+    }
+
+    // Atualizar produto existente
+    public function update(Request $request, $id)
+    {
+        $produto = Product::find($id);
+        if (!$produto) return response()->json(['error' => 'Produto não encontrado.'], 404);
+
+        $validated = $request->validate([
+            'ean' => "required|string|unique:products,ean,{$id}",
+            'description' => 'nullable|string',
+            'brand' => 'nullable|string',
+            'ncm' => 'nullable|string',
+            'unit' => 'nullable|string',
+            'gross_weight' => 'nullable|numeric',
+            'net_weight' => 'nullable|numeric',
+            'image' => 'nullable|string',
+            'source' => 'nullable|string',
+            'type' => 'nullable|string',
+            'complete' => 'nullable|boolean',
+        ]);
+
+        $produto->update($validated);
+        return response()->json($produto);
+    }
+
+    // Excluir produto
+    public function destroy($id)
+    {
+        $produto = Product::find($id);
+        if (!$produto) return response()->json(['error' => 'Produto não encontrado.'], 404);
+
+        $produto->delete();
+        return response()->json(['message' => 'Produto excluído com sucesso.']);
+    }
+
+    private function successResponse($data, $message = null, $code = 200)
+    {
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'data' => $data,
+        ], $code);
+    }
+
+    private function errorResponse($message = 'Erro inesperado.', $code = 400)
+    {
+        return response()->json([
+            'success' => false,
+            'message' => $message,
+            'data' => null,
+        ], $code);
+    }
+
 }
