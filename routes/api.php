@@ -5,6 +5,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProductExportController;
+use App\Http\Controllers\ActivityLogController;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Response;
 
 
 // 🔓 Rotas públicas
@@ -34,6 +37,22 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 
     Route::middleware(['auth:sanctum', 'role:admin,operador'])->get('/produtos/export/csv', [ProductExportController::class, 'exportCsv']);
+
+    Route::middleware(['auth:sanctum', 'role:admin'])->get('/logs', function () {
+        $path = storage_path('logs/activity.log');
+
+        if (!File::exists($path)) {
+            return response()->json(['message' => 'Nenhum log encontrado.'], 404);
+        }
+
+        $logs = File::get($path);
+
+        return Response::make($logs, 200, [
+            'Content-Type' => 'text/plain',
+        ]);
+    });
+
+    Route::middleware(['auth:sanctum', 'role:admin'])->get('/logs/db', [ActivityLogController::class, 'index']);
 });
 
 

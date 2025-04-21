@@ -6,6 +6,8 @@ use App\Models\Product;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 use App\Http\Resources\ProductResource;
+use App\Helpers\LogHelper;
+use Illuminate\Support\Facades\Log;
 
 
 class ProductController extends Controller
@@ -41,6 +43,8 @@ class ProductController extends Controller
                 'complete' => true
             ]);
 
+            LogHelper::log('created_product', "Produto '{$produto->description}' (ID: {$produto->id}) criado automaticamente via Cosmos.");
+
             return $this->successResponse(new ProductResource($produto), 'Produto criado com sucesso.', 201);
         }
 
@@ -61,6 +65,8 @@ class ProductController extends Controller
                 'complete' => false
             ]);
 
+            LogHelper::log('created_product', "Produto '{$produto->description}' (ID: {$produto->id}) criado automaticamente via Open Foods.");
+
             return $this->successResponse(new ProductResource($produto), 'Produto criado com sucesso.', 201);
         }
 
@@ -75,12 +81,14 @@ class ProductController extends Controller
                     'ean' => $ean,
                     'description' => $info['title'] ?? null,
                     'brand' => implode(', ', $info['authors'] ?? []),
-                    'unit' => $info['pageCount'] ? "{$info['pageCount']} páginas" : null,
+  'unit' => $info['pageCount'] ? "{$info['pageCount']} páginas" : null,
                     'image' => $info['imageLinks']['thumbnail'] ?? null,
                     'source' => 'googlebooks',
                     'type' => 'livro',
                     'complete' => false
                 ]);
+
+                LogHelper::log('created_product', "Produto '{$produto->description}' (ID: {$produto->id}) criado automaticamente via Google Books.");
 
                 return $this->successResponse(new ProductResource($produto), 'Produto criado com sucesso.', 201);
             }
@@ -107,6 +115,7 @@ class ProductController extends Controller
     // Criar produto manualmente
     public function store(Request $request)
     {
+        Log::info('Teste de criação de log', ['context' => 'teste']);
         $validated = $request->validate([
             'ean' => 'required|string|unique:products,ean',
             'description' => 'nullable|string',
@@ -122,6 +131,7 @@ class ProductController extends Controller
         ]);
 
         $produto = Product::create($validated);
+        Log::channel('activity')->info('Produto criado com sucesso', ['product_id' => $produto->id]);
         return new ProductResource($produto);
     }
 
@@ -146,7 +156,11 @@ class ProductController extends Controller
         ]);
 
         $produto->update($validated);
+
+        LogHelper::log('updated_product', "Produto '{$produto->description}' (ID: {$produto->id}) atualizado.");
+
         return response()->json($produto);
+
     }
 
     // Excluir produto
@@ -154,6 +168,8 @@ class ProductController extends Controller
     {
         $produto = Product::find($id);
         if (!$produto) return response()->json(['error' => 'Produto não encontrado.'], 404);
+
+        LogHelper::log('deleted_product', "Produto '{$produto->description}' (ID: {$produto->id}) excluído.");
 
         $produto->delete();
         return response()->json(['message' => 'Produto excluído com sucesso.']);
