@@ -4,6 +4,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProductExportController;
+
 
 // 🔓 Rotas públicas
 Route::post('/register', [AuthController::class, 'register']);
@@ -30,7 +32,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
+
+    Route::middleware(['auth:sanctum', 'role:admin,operador'])->get('/produtos/export/csv', [ProductExportController::class, 'exportCsv']);
 });
+
+
 
 
 Route::middleware('auth:sanctum')->get('/debug-user', function (Request $request) {
