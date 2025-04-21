@@ -9,6 +9,8 @@ use App\Http\Controllers\ActivityLogController;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Response;
 
+// Rotas de testes sem usuários
+// Route::get('/produtos/export/csv', [ProductExportController::class, 'exportCsv']);
 
 // 🔓 Rotas públicas
 Route::post('/register', [AuthController::class, 'register']);
@@ -37,6 +39,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 
     Route::middleware(['auth:sanctum', 'role:admin,operador'])->get('/produtos/export/csv', [ProductExportController::class, 'exportCsv']);
+
 
     Route::middleware(['auth:sanctum', 'role:admin'])->get('/logs', function () {
         $path = storage_path('logs/activity.log');

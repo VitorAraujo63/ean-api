@@ -9,6 +9,8 @@ class ProductExportController extends Controller
 {
     public function exportCsv()
     {
-        return Excel::download(new ProdutosExport, 'produtos.csv');
+        return Excel::download(new ProdutosExport, 'produtos.csv', \Maatwebsite\Excel\Excel::CSV, [
+            'Content-Type' => 'text/csv',
+        ]);
     }
 }
