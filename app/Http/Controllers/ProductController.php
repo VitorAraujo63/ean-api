@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Http\Request;
 use App\Http\Resources\ProductResource;
 use App\Helpers\LogHelper;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Log;
 
 
@@ -193,4 +195,22 @@ class ProductController extends Controller
         ], $code);
     }
 
+    public function createImage(Request $request)
+    {
+        $request->validate([
+            'imagem' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+    
+        if ($request->hasFile('imagem')) {
+            $nomeArquivo = time() . '.' . $request->imagem->extension();
+            $caminho = $request->imagem->storeAs('images', $nomeArquivo, 'public');
+    
+            // Você pode salvar o caminho no banco de dados se quiser
+            // Exemplo: Imagem::create(['caminho' => $caminho]);
+    
+            return back()->with('success', 'Imagem salva com sucesso!')->with('caminho', $caminho);
+        }
+    
+        return back()->with('error', 'Falha ao enviar imagem.');
+    }
 }
