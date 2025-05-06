@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Response;
 // Rotas de testes sem usuários
 Route::get('/test-export-csv', [ProductExportController::class, 'exportCsv']);
 
-    
+
 // 🔓 Rotas públicas
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);

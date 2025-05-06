@@ -12,6 +12,12 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Log;
 
 
+/**
+ * @OA\Tag(
+ *     name="Produtos",
+ *     description="Operações relacionadas aos produtos."
+ * )
+ */
 class ProductController extends Controller
 {
     public function buscarPorEan(Request $request)
@@ -99,13 +105,35 @@ class ProductController extends Controller
         return $this->errorResponse('Produto não encontrado em nenhuma fonte.', 404);
     }
 
-        // Listar todos os produtos
+    /**
+     * @OA\Get(
+     *     path="/api/produtos",
+     *     tags={"Produtos"},
+     *     summary="Listar todos os produtos",
+     *     @OA\Response(response=200, description="Lista de produtos"),
+     *     @OA\Response(response=500, description="Erro interno no servidor.")
+     * )
+     */
     public function index()
     {
         return ProductResource::collection(Product::all());
     }
 
-    // Ver um produto específico
+    /**
+     * @OA\Get(
+     *     path="/api/produtos/{id}",
+     *     tags={"Produtos"},
+     *     summary="Exibir detalhes de um produto",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(response=200, description="Detalhes do produto"),
+     *     @OA\Response(response=404, description="Produto não encontrado")
+     * )
+     */
     public function show($id)
     {
         $produto = Product::find($id);
@@ -114,7 +142,30 @@ class ProductController extends Controller
         return response()->json($produto);
     }
 
-    // Criar produto manualmente
+
+    /**
+     * @OA\Post(
+     *     path="/api/produtos",
+     *     tags={"Produtos"},
+     *     summary="Criar um novo produto",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="application/json",
+     *             @OA\Schema(
+     *                 type="object",
+     *                 required={"ean"},
+     *                 @OA\Property(property="ean", type="string", example="1234567890123"),
+     *                 @OA\Property(property="description", type="string", example="Produto de Exemplo"),
+     *                 @OA\Property(property="brand", type="string", example="Marca XYZ"),
+     *                 @OA\Property(property="image", type="string", example="https://example.com/image.jpg")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=201, description="Produto criado com sucesso."),
+     *     @OA\Response(response=400, description="Erro ao validar os dados.")
+     * )
+     */
     public function store(Request $request)
     {
         Log::info('Teste de criação de log', ['context' => 'teste']);
@@ -137,7 +188,32 @@ class ProductController extends Controller
         return new ProductResource($produto);
     }
 
-    // Atualizar produto existente
+
+    /**
+     * @OA\Put(
+     *     path="/api/produtos/{id}",
+     *     tags={"Produtos"},
+     *     summary="Atualizar um produto",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="application/json",
+     *             @OA\Schema(
+     *                 type="object",
+     *                 @OA\Property(property="description", type="string", example="Produto Atualizado")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Produto atualizado com sucesso."),
+     *     @OA\Response(response=404, description="Produto não encontrado.")
+     * )
+     */
     public function update(Request $request, $id)
     {
         $produto = Product::find($id);
@@ -165,7 +241,22 @@ class ProductController extends Controller
 
     }
 
-    // Excluir produto
+
+    /**
+     * @OA\Delete(
+     *     path="/api/produtos/{id}",
+     *     tags={"Produtos"},
+     *     summary="Excluir um produto",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(response=200, description="Produto excluído com sucesso."),
+     *     @OA\Response(response=404, description="Produto não encontrado.")
+     * )
+     */
     public function destroy($id)
     {
         $produto = Product::find($id);

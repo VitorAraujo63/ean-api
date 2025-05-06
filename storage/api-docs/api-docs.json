@@ -1,0 +1,299 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Documentação da API",
+        "description": "API para gerenciamento de produtos com autenticação",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:80",
+            "description": "Servidor API"
+        }
+    ],
+    "paths": {
+        "/api/register": {
+            "post": {
+                "tags": [
+                    "Autenticação"
+                ],
+                "summary": "Registrar um novo usuário",
+                "operationId": "8a56853624e025573120a09a4c75d468",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password",
+                                    "role"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "example": "johndoe@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "example": "secret123"
+                                    },
+                                    "role": {
+                                        "type": "string",
+                                        "enum": [
+                                            "admin",
+                                            "operador"
+                                        ],
+                                        "example": "admin"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Usuário registrado com sucesso."
+                    },
+                    "400": {
+                        "description": "Erro de validação dos dados."
+                    }
+                }
+            }
+        },
+        "/api/login": {
+            "post": {
+                "tags": [
+                    "Autenticação"
+                ],
+                "summary": "Realizar login de um usuário",
+                "operationId": "a3b306d14572d1f4bd6c064b3233e7b8",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "example": "johndoe@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "example": "secret123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login bem-sucedido, retorna o token."
+                    },
+                    "401": {
+                        "description": "Credenciais inválidas."
+                    }
+                }
+            }
+        },
+        "/api/produtos": {
+            "get": {
+                "tags": [
+                    "Produtos"
+                ],
+                "summary": "Listar todos os produtos",
+                "operationId": "10841ce9f899ba906a6a4f19fd0a5fbe",
+                "responses": {
+                    "200": {
+                        "description": "Lista de produtos"
+                    },
+                    "500": {
+                        "description": "Erro interno no servidor."
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Produtos"
+                ],
+                "summary": "Criar um novo produto",
+                "operationId": "15f14d72ddfbf1fea0baab03d8a81aa0",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "ean"
+                                ],
+                                "properties": {
+                                    "ean": {
+                                        "type": "string",
+                                        "example": "1234567890123"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Produto de Exemplo"
+                                    },
+                                    "brand": {
+                                        "type": "string",
+                                        "example": "Marca XYZ"
+                                    },
+                                    "image": {
+                                        "type": "string",
+                                        "example": "https://example.com/image.jpg"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Produto criado com sucesso."
+                    },
+                    "400": {
+                        "description": "Erro ao validar os dados."
+                    }
+                }
+            }
+        },
+        "/api/produtos/{id}": {
+            "get": {
+                "tags": [
+                    "Produtos"
+                ],
+                "summary": "Exibir detalhes de um produto",
+                "operationId": "93b903542291f0b00d6cbf08269b86c8",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detalhes do produto"
+                    },
+                    "404": {
+                        "description": "Produto não encontrado"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Produtos"
+                ],
+                "summary": "Atualizar um produto",
+                "operationId": "0f8bfb14fd7ee25ea71a034a7ad2fc6c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Produto Atualizado"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Produto atualizado com sucesso."
+                    },
+                    "404": {
+                        "description": "Produto não encontrado."
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Produtos"
+                ],
+                "summary": "Excluir um produto",
+                "operationId": "ff7c08fe1f3dee747fe4b668755be73a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Produto excluído com sucesso."
+                    },
+                    "404": {
+                        "description": "Produto não encontrado."
+                    }
+                }
+            }
+        },
+        "/api/exportar-produtos": {
+            "get": {
+                "tags": [
+                    "Exportação"
+                ],
+                "summary": "Exportar produtos para CSV",
+                "operationId": "4623b9443995cf3b548f7bf02afa83ab",
+                "responses": {
+                    "200": {
+                        "description": "Arquivo CSV gerado com sucesso."
+                    },
+                    "500": {
+                        "description": "Erro ao gerar arquivo CSV."
+                    }
+                }
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Autenticação",
+            "description": "Operações relacionadas ao registro e login de usuários."
+        },
+        {
+            "name": "Produtos",
+            "description": "Operações relacionadas aos produtos."
+        },
+        {
+            "name": "Exportação",
+            "description": "Operações para exportação de dados."
+        }
+    ]
+}
