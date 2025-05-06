@@ -20,3 +20,4 @@ Route::get('/images', function() {
 });
 
 Route::post('/images', [ProductController::class, 'createImage'])->name('imagens.store');
+Route::get('/images', [ProductController::class, 'showImages']);

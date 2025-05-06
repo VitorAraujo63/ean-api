@@ -200,17 +200,23 @@ class ProductController extends Controller
         $request->validate([
             'imagem' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
-    
+
         if ($request->hasFile('imagem')) {
             $nomeArquivo = time() . '.' . $request->imagem->extension();
             $caminho = $request->imagem->storeAs('images', $nomeArquivo, 'public');
-    
+
             // Você pode salvar o caminho no banco de dados se quiser
             // Exemplo: Imagem::create(['caminho' => $caminho]);
-    
+
             return back()->with('success', 'Imagem salva com sucesso!')->with('caminho', $caminho);
         }
-    
+
         return back()->with('error', 'Falha ao enviar imagem.');
+    }
+
+    public function showImages()
+    {
+        $files = Storage::disk('public')->files('images'); // folder inside storage/app/public
+        return view('test.images', compact('files'));
     }
 }
