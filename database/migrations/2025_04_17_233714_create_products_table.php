@@ -20,6 +20,8 @@ return new class extends Migration
         $table->string('image')->nullable();
         $table->string('source')->nullable(); // cosmos ou openfoodfacts
         $table->boolean('complete')->default(false);
+        $table->decimal('price')->nullable();
+        $table->decimal('cost')->nullable();
         $table->timestamps();
     });
     }

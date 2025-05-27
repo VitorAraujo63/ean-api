@@ -20,9 +20,13 @@ class Product extends Model
         'image',
         'source',
         'complete',
+        'price',
+        'cost',
     ];
 
     protected $casts = [
+        'price' => 'decimal:3',
+        'cost' => 'decimal:3',
         'gross_weight' => 'decimal:3',
         'net_weight' => 'decimal:3',
         'complete' => 'boolean',

@@ -181,6 +181,8 @@ class ProductController extends Controller
             'source' => 'nullable|string',
             'type' => 'nullable|string',
             'complete' => 'nullable|boolean',
+            'price' => 'nullable|numeric',
+            'cost' => 'nullable|numeric',
         ]);
 
         $produto = Product::create($validated);
@@ -231,6 +233,8 @@ class ProductController extends Controller
             'source' => 'nullable|string',
             'type' => 'nullable|string',
             'complete' => 'nullable|boolean',
+            'price' => 'nullable|numeric',
+            'cost' => 'nullable|numeric'
         ]);
 
         $produto->update($validated);
