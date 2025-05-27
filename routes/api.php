@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Response;
 use App\Http\Controllers\Api\SalesController;
 use App\Http\Controllers\Api\CustomersController;
+use App\Http\Controllers\CategoryExportController;
+use App\Http\Controllers\CategoryController;
 
 // Rotas de testes sem usuários
 Route::get('/test-export-csv', [ProductExportController::class, 'exportCsv']);
@@ -24,15 +26,15 @@ Route::delete('/produtos/{id}', [ProductController::class, 'destroy']);
 Route::middleware(['auth:sanctum'])->group(function () {
 
     // ✅ Buscar produto por EAN (admin e operador)
-    Route::post('/produto', [ProductController::class, 'buscarPorEan'])->middleware('role:admin,operador');
+    Route::post('/produto', [ProductController::class, 'buscarPorEan']);
 
     // ✅ Listagem e visualização de produtos (qualquer usuário autenticado)
     Route::get('/produtos', [ProductController::class, 'index']);
     Route::get('/produtos/{id}', [ProductController::class, 'show']);
 
     // ✅ Criar e atualizar produtos (admin e operador)
-    Route::post('/produtos', [ProductController::class, 'store'])->middleware('role:admin,operador');
-    Route::put('/produtos/{id}', [ProductController::class, 'update'])->middleware('role:admin,operador');
+    Route::post('/produtos', [ProductController::class, 'store']);
+    Route::put('/produtos/{id}', [ProductController::class, 'update']);
 
     // ❌ Deletar produto (somente admin)
 
@@ -98,3 +100,20 @@ Route::prefix('customers')->group(function () {
     Route::put('/{customer}', [CustomersController::class, 'update']);
     Route::delete('/{customer}', [CustomersController::class, 'destroy']);
 });
+
+
+// ✅ Listagem e visualização de categorias
+    Route::get('/categorias', [CategoryController::class, 'index']);
+    Route::get('/categorias/{id}', [CategoryController::class, 'show']);
+    Route::get('/categorias/stats', [CategoryController::class, 'stats']);
+
+    // ✅ Criar e atualizar categorias
+    Route::post('/categorias', [CategoryController::class, 'store']);
+    Route::put('/categorias/{id}', [CategoryController::class, 'update']);
+    Route::patch('/categorias/{id}/toggle-status', [CategoryController::class, 'toggleStatus']);
+
+    // ❌ Deletar categoria
+    Route::delete('/categorias/{id}', [CategoryController::class, 'destroy'])->middleware('role:admin');
+
+    // ✅ Exportar categorias
+    Route::get('/categorias/export/csv', [CategoryExportController::class, 'exportCsv']);

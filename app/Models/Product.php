@@ -22,6 +22,7 @@ class Product extends Model
         'complete',
         'price',
         'cost',
+        'category_id'
     ];
 
     protected $casts = [
