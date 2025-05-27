@@ -257,15 +257,17 @@ class ProductController extends Controller
      *     @OA\Response(response=404, description="Produto não encontrado.")
      * )
      */
-    public function destroy($id)
+        public function destroy($id)
     {
         $produto = Product::find($id);
-        if (!$produto) return response()->json(['error' => 'Produto não encontrado.'], 404);
 
-        LogHelper::log('deleted_product', "Produto '{$produto->description}' (ID: {$produto->id}) excluído.");
+        if (!$produto) {
+            return response()->json(['message' => 'Produto não encontrado'], 404);
+        }
 
         $produto->delete();
-        return response()->json(['message' => 'Produto excluído com sucesso.']);
+
+        return response()->json(['message' => 'Produto excluído com sucesso']);
     }
 
     private function successResponse($data, $message = null, $code = 200)

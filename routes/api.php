@@ -2,12 +2,14 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductController; // ✅ CORRETO
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProductExportController;
 use App\Http\Controllers\ActivityLogController;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Response;
+use App\Http\Controllers\Api\SalesController;
+use App\Http\Controllers\Api\CustomersController;
 
 // Rotas de testes sem usuários
 Route::get('/test-export-csv', [ProductExportController::class, 'exportCsv']);
@@ -16,6 +18,7 @@ Route::get('/test-export-csv', [ProductExportController::class, 'exportCsv']);
 // 🔓 Rotas públicas
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::delete('/produtos/{id}', [ProductController::class, 'destroy']);
 
 // 🔐 Rotas protegidas por autenticação
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -32,7 +35,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/produtos/{id}', [ProductController::class, 'update'])->middleware('role:admin,operador');
 
     // ❌ Deletar produto (somente admin)
-    Route::delete('/produtos/{id}', [ProductController::class, 'destroy'])->middleware('role:admin');
+
 
     // ✅ Dados do usuário autenticado
     Route::get('/user', function (Request $request) {
@@ -66,4 +69,32 @@ Route::middleware('auth:sanctum')->get('/debug-user', function (Request $request
     return response()->json([
         'user' => $request->user()
     ]);
+});
+
+
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+*/
+
+// Sales routes
+Route::prefix('sales')->group(function () {
+    Route::get('/', [SalesController::class, 'index']);
+    Route::post('/', [SalesController::class, 'store']);
+    Route::get('/metrics', [SalesController::class, 'metrics']);
+    Route::get('/export', [SalesController::class, 'export']);
+    Route::get('/{sale}', [SalesController::class, 'show']);
+    Route::put('/{sale}', [SalesController::class, 'update']);
+    Route::delete('/{sale}', [SalesController::class, 'destroy']);
+});
+
+// Customers routes
+Route::prefix('customers')->group(function () {
+    Route::get('/', [CustomersController::class, 'index']);
+    Route::post('/', [CustomersController::class, 'store']);
+    Route::get('/{customer}', [CustomersController::class, 'show']);
+    Route::put('/{customer}', [CustomersController::class, 'update']);
+    Route::delete('/{customer}', [CustomersController::class, 'destroy']);
 });
