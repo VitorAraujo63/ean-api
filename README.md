@@ -1,3 +1,5 @@
+`sail artisan db:seed --class=CompleteSeeder` <br>
+
 `GET /api/sales` - List sales with pagination and filters <br>
 `POST /api/sales` - Create new sale <br>
 `GET /api/sales/metrics` - Dashboard metrics <br>

@@ -12,6 +12,8 @@ use App\Http\Controllers\Api\SalesController;
 use App\Http\Controllers\Api\CustomersController;
 use App\Http\Controllers\CategoryExportController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\AnalyticsController;
 
 // Rotas de testes sem usuários
 Route::get('/test-export-csv', [ProductExportController::class, 'exportCsv']);
@@ -117,3 +119,13 @@ Route::prefix('customers')->group(function () {
 
     // ✅ Exportar categorias
     Route::get('/categorias/export/csv', [CategoryExportController::class, 'exportCsv']);
+
+
+    // ✅ Dashboard data (any authenticated user)
+    Route::get('/dashboard', [DashboardController::class, 'index']);
+    Route::get('/dashboard/quick-stats', [DashboardController::class, 'quickStats']);
+
+    // ✅ Analytics (admin and operador)
+
+        Route::get('/analytics/category/{categoryId}', [AnalyticsController::class, 'categoryAnalytics']);
+        Route::get('/analytics/profit', [AnalyticsController::class, 'profitAnalysis']);

@@ -108,6 +108,219 @@
                 }
             }
         },
+        "/api/categorias": {
+            "get": {
+                "tags": [
+                    "Categorias"
+                ],
+                "summary": "Listar todas as categorias",
+                "operationId": "01039d50ab9e3aebf7c8b192bb8814e6",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Pesquisar por nome da categoria",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filtrar por status",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "ativo",
+                                "inativo"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de categorias"
+                    },
+                    "500": {
+                        "description": "Erro interno no servidor."
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Categorias"
+                ],
+                "summary": "Criar uma nova categoria",
+                "operationId": "e6b1f229b6df52abf4942c177e038791",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Eletrônicos"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Produtos eletrônicos diversos"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "ativo",
+                                            "inativo"
+                                        ],
+                                        "example": "ativo"
+                                    },
+                                    "image": {
+                                        "type": "string",
+                                        "example": "https://example.com/image.jpg"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Categoria criada com sucesso."
+                    },
+                    "400": {
+                        "description": "Erro ao validar os dados."
+                    }
+                }
+            }
+        },
+        "/api/categorias/{id}": {
+            "get": {
+                "tags": [
+                    "Categorias"
+                ],
+                "summary": "Exibir detalhes de uma categoria",
+                "operationId": "f9b99c8ff3b2695de7a94c928b117852",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detalhes da categoria"
+                    },
+                    "404": {
+                        "description": "Categoria não encontrada"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Categorias"
+                ],
+                "summary": "Atualizar uma categoria",
+                "operationId": "33af113f02f987e16f69982e4bf91ee7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Eletrônicos Atualizados"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Descrição atualizada"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "ativo",
+                                            "inativo"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Categoria atualizada com sucesso."
+                    },
+                    "404": {
+                        "description": "Categoria não encontrada."
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Categorias"
+                ],
+                "summary": "Excluir uma categoria",
+                "operationId": "b7fd43b7df16a98b55b95170a419ab22",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Categoria excluída com sucesso."
+                    },
+                    "404": {
+                        "description": "Categoria não encontrada."
+                    },
+                    "400": {
+                        "description": "Categoria possui produtos vinculados."
+                    }
+                }
+            }
+        },
+        "/api/dashboard": {
+            "get": {
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "Obter dados completos do dashboard",
+                "operationId": "f9ae6bf029fd5455620e57be01c3b831",
+                "responses": {
+                    "200": {
+                        "description": "Dados do dashboard"
+                    },
+                    "500": {
+                        "description": "Erro interno no servidor."
+                    }
+                }
+            }
+        },
         "/api/produtos": {
             "get": {
                 "tags": [
@@ -286,6 +499,14 @@
         {
             "name": "Autenticação",
             "description": "Operações relacionadas ao registro e login de usuários."
+        },
+        {
+            "name": "Categorias",
+            "description": "Operações relacionadas às categorias de produtos."
+        },
+        {
+            "name": "Dashboard",
+            "description": "Operações relacionadas ao dashboard e métricas do negócio."
         },
         {
             "name": "Produtos",
