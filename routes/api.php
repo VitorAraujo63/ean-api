@@ -15,41 +15,33 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AnalyticsController;
 
-// Rotas de testes sem usuários
+
 Route::get('/test-export-csv', [ProductExportController::class, 'exportCsv']);
 
 
-// 🔓 Rotas públicas
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::delete('/produtos/{id}', [ProductController::class, 'destroy']);
 
-// 🔐 Rotas protegidas por autenticação
-Route::middleware(['auth:sanctum'])->group(function () {
-
-    // ✅ Buscar produto por EAN (admin e operador)
-    Route::post('/produto', [ProductController::class, 'buscarPorEan']);
-
-    // ✅ Listagem e visualização de produtos (qualquer usuário autenticado)
-    Route::get('/produtos', [ProductController::class, 'index']);
-    Route::get('/produtos/{id}', [ProductController::class, 'show']);
-
-    // ✅ Criar e atualizar produtos (admin e operador)
-    Route::post('/produtos', [ProductController::class, 'store']);
-    Route::put('/produtos/{id}', [ProductController::class, 'update']);
-
-    // ❌ Deletar produto (somente admin)
 
 
-    // ✅ Dados do usuário autenticado
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
 
-    Route::middleware(['auth:sanctum', 'role:admin,operador'])->get('/produtos/export/csv', [ProductExportController::class, 'exportCsv']);
+Route::post('/produto', [ProductController::class, 'buscarPorEan']);
 
 
-    Route::middleware(['auth:sanctum', 'role:admin'])->get('/logs', function () {
+Route::get('/produtos', [ProductController::class, 'index']);
+Route::get('/produtos/{id}', [ProductController::class, 'show']);
+
+
+Route::post('/produtos', [ProductController::class, 'store']);
+Route::put('/produtos/{id}', [ProductController::class, 'update']);
+
+
+
+Route::get('/produtos/export/csv', [ProductExportController::class, 'exportCsv']);
+
+
+Route::middleware(['auth:sanctum', 'role:admin'])->get('/logs', function () {
         $path = storage_path('logs/activity.log');
 
         if (!File::exists($path)) {
@@ -63,69 +55,41 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ]);
     });
 
-    Route::middleware(['auth:sanctum', 'role:admin'])->get('/logs/db', [ActivityLogController::class, 'index']);
-});
+Route::middleware(['auth:sanctum', 'role:admin'])->get('/logs/db', [ActivityLogController::class, 'index']);
+
 
 
 
 
 Route::middleware('auth:sanctum')->get('/debug-user', function (Request $request) {
-    return response()->json([
-        'user' => $request->user()
-    ]);
-});
+        return response()->json([
+            'user' => $request->user()
+        ]);
+    });
 
 
-
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-*/
-
-// Sales routes
-Route::prefix('sales')->group(function () {
-    Route::get('/', [SalesController::class, 'index']);
-    Route::post('/', [SalesController::class, 'store']);
-    Route::get('/metrics', [SalesController::class, 'metrics']);
-    Route::get('/export', [SalesController::class, 'export']);
-    Route::get('/{sale}', [SalesController::class, 'show']);
-    Route::put('/{sale}', [SalesController::class, 'update']);
-    Route::delete('/{sale}', [SalesController::class, 'destroy']);
-});
-
-// Customers routes
-Route::prefix('customers')->group(function () {
-    Route::get('/', [CustomersController::class, 'index']);
-    Route::post('/', [CustomersController::class, 'store']);
-    Route::get('/{customer}', [CustomersController::class, 'show']);
-    Route::put('/{customer}', [CustomersController::class, 'update']);
-    Route::delete('/{customer}', [CustomersController::class, 'destroy']);
-});
-
-
-// ✅ Listagem e visualização de categorias
-    Route::get('/categorias', [CategoryController::class, 'index']);
-    Route::get('/categorias/{id}', [CategoryController::class, 'show']);
-    Route::get('/categorias/stats', [CategoryController::class, 'stats']);
+    // ✅ Listagem e visualização de categorias
+Route::get('/categorias', [CategoryController::class, 'index']);
+Route::get('/categorias/{id}', [CategoryController::class, 'show']);
+Route::get('/categorias/stats', [CategoryController::class, 'stats']);
 
     // ✅ Criar e atualizar categorias
-    Route::post('/categorias', [CategoryController::class, 'store']);
-    Route::put('/categorias/{id}', [CategoryController::class, 'update']);
-    Route::patch('/categorias/{id}/toggle-status', [CategoryController::class, 'toggleStatus']);
+Route::post('/categorias', [CategoryController::class, 'store']);
+Route::put('/categorias/{id}', [CategoryController::class, 'update']);
+Route::patch('/categorias/{id}/toggle-status', [CategoryController::class, 'toggleStatus']);
 
     // ❌ Deletar categoria
-    Route::delete('/categorias/{id}', [CategoryController::class, 'destroy'])->middleware('role:admin');
+Route::delete('/categorias/{id}', [CategoryController::class, 'destroy'])->middleware('role:admin');
 
     // ✅ Exportar categorias
-    Route::get('/categorias/export/csv', [CategoryExportController::class, 'exportCsv']);
+Route::get('/categorias/export/csv', [CategoryExportController::class, 'exportCsv']);
 
 
     // ✅ Dashboard data (any authenticated user)
-    Route::get('/dashboard', [DashboardController::class, 'index']);
-    Route::get('/dashboard/quick-stats', [DashboardController::class, 'quickStats']);
+Route::get('/dashboard', [DashboardController::class, 'index']);
+Route::get('/dashboard/quick-stats', [DashboardController::class, 'quickStats']);
 
     // ✅ Analytics (admin and operador)
 
-        Route::get('/analytics/category/{categoryId}', [AnalyticsController::class, 'categoryAnalytics']);
-        Route::get('/analytics/profit', [AnalyticsController::class, 'profitAnalysis']);
+Route::get('/analytics/category/{categoryId}', [AnalyticsController::class, 'categoryAnalytics']);
+Route::get('/analytics/profit', [AnalyticsController::class, 'profitAnalysis']);

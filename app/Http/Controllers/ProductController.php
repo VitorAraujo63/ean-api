@@ -45,13 +45,13 @@ class ProductController extends Controller
                 'unit' => $dados['gtins'][0]['commercial_unit']['type_packaging'] ?? null,
                 'net_weight' => $dados['net_weight'] ?? null,
                 'gross_weight' => $dados['gross_weight'] ?? null,
-                'image' => $dados['barcode_image'] ?? null,
+                'image' => $dados['thumbnail'] ?? null,
                 'source' => 'cosmos',
                 'type' => 'mercado',
                 'complete' => true
             ]);
 
-            LogHelper::log('created_product', "Produto '{$produto->description}' (ID: {$produto->id}) criado automaticamente via Cosmos.");
+
 
             return $this->successResponse(new ProductResource($produto), 'Produto criado com sucesso.', 201);
         }
@@ -73,7 +73,7 @@ class ProductController extends Controller
                 'complete' => false
             ]);
 
-            LogHelper::log('created_product', "Produto '{$produto->description}' (ID: {$produto->id}) criado automaticamente via Open Foods.");
+
 
             return $this->successResponse(new ProductResource($produto), 'Produto criado com sucesso.', 201);
         }
@@ -96,7 +96,7 @@ class ProductController extends Controller
                     'complete' => false
                 ]);
 
-                LogHelper::log('created_product', "Produto '{$produto->description}' (ID: {$produto->id}) criado automaticamente via Google Books.");
+
 
                 return $this->successResponse(new ProductResource($produto), 'Produto criado com sucesso.', 201);
             }
@@ -168,7 +168,7 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        Log::info('Teste de criação de log', ['context' => 'teste']);
+
         $validated = $request->validate([
             'ean' => 'required|string|unique:products,ean',
             'description' => 'nullable|string',
@@ -186,7 +186,7 @@ class ProductController extends Controller
         ]);
 
         $produto = Product::create($validated);
-        Log::channel('activity')->info('Produto criado com sucesso', ['product_id' => $produto->id]);
+
         return new ProductResource($produto);
     }
 
@@ -239,7 +239,7 @@ class ProductController extends Controller
 
         $produto->update($validated);
 
-        LogHelper::log('updated_product', "Produto '{$produto->description}' (ID: {$produto->id}) atualizado.");
+
 
         return response()->json($produto);
 
