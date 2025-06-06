@@ -63,9 +63,37 @@ Route::middleware(['auth:sanctum', 'role:admin'])->get('/logs/db', [ActivityLogC
 
 Route::middleware('auth:sanctum')->get('/debug-user', function (Request $request) {
         return response()->json([
-            'user' => $request->user()
-        ]);
-    });
+        'user' => $request->user()
+    ]);
+});
+
+
+
+// Sales routes
+Route::prefix('sales')->group(function () {
+Route::get('/', [SalesController::class, 'index']);
+Route::post('/', [SalesController::class, 'store']);
+Route::get('/metrics', [SalesController::class, 'metrics']);
+Route::get('/export', [SalesController::class, 'export']);
+Route::get('/{sale}', [SalesController::class, 'show']);
+Route::put('/{sale}', [SalesController::class, 'update']);
+Route::delete('/{sale}', [SalesController::class, 'destroy']);
+});
+
+// Customers routes
+Route::prefix('customers')->group(function () {
+    Route::get('/', [CustomersController::class, 'index']);
+    Route::post('/', [CustomersController::class, 'store']);
+    Route::get('/{customer}', [CustomersController::class, 'show']);
+    Route::put('/{customer}', [CustomersController::class, 'update']);
+    Route::delete('/{customer}', [CustomersController::class, 'destroy']);
+});
+
+
+// ✅ Listagem e visualização de categorias
+Route::get('/categorias', [CategoryController::class, 'index']);
+Route::get('/categorias/{id}', [CategoryController::class, 'show']);
+Route::get('/categorias/stats', [CategoryController::class, 'stats']);
 
 
     // ✅ Listagem e visualização de categorias
