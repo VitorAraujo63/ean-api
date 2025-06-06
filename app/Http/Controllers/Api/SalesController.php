@@ -4,24 +4,28 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Sale;
+use App\Models\SaleItem;
 use App\Models\Customer;
+use App\Models\Product;
+use App\Http\Resources\SaleResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class SalesController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Sale::with('customer');
+        $query = Sale::with(['customer', 'items.product']);
 
         // Search functionality
         if ($request->has('search') && $request->search) {
             $search = $request->search;
             $query->whereHas('customer', function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%");
-            });
+            })->orWhere('sale_number', 'like', "%{$search}%");
         }
 
         // Filter by status
@@ -49,7 +53,7 @@ class SalesController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $sales->items(),
+            'data' => SaleResource::collection($sales->items()),
             'pagination' => [
                 'current_page' => $sales->currentPage(),
                 'last_page' => $sales->lastPage(),
@@ -65,30 +69,85 @@ class SalesController extends Controller
     {
         $validated = $request->validate([
             'customer_id' => 'required|exists:customers,id',
-            'price' => 'required|numeric|min:0',
             'shipping' => 'nullable|numeric|min:0',
+            'discount_total' => 'nullable|numeric|min:0',
+            'tax_total' => 'nullable|numeric|min:0',
             'status' => 'required|in:pago,pendente,cancelado',
             'payment_method' => 'required|in:mastercard,visa,pix,boleto',
-            'sale_date' => 'required|date'
+            'sale_date' => 'required|date',
+            'notes' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.unit_price' => 'nullable|numeric|min:0',
+            'items.*.discount' => 'nullable|numeric|min:0',
+            'items.*.notes' => 'nullable|string'
         ]);
 
-        $sale = Sale::create($validated);
-        $sale->load('customer');
+        try {
+            DB::beginTransaction();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Venda criada com sucesso',
-            'data' => $sale
-        ], 201);
+            // Create sale
+            $sale = Sale::create([
+                'customer_id' => $validated['customer_id'],
+                'shipping' => $validated['shipping'] ?? 0,
+                'discount_total' => $validated['discount_total'] ?? 0,
+                'tax_total' => $validated['tax_total'] ?? 0,
+                'status' => $validated['status'],
+                'payment_method' => $validated['payment_method'],
+                'sale_date' => $validated['sale_date'],
+                'notes' => $validated['notes'] ?? null
+            ]);
+
+            // Create sale items
+            foreach ($validated['items'] as $itemData) {
+                $product = Product::find($itemData['product_id']);
+
+                // Use product price if unit_price not provided
+                $unitPrice = $itemData['unit_price'] ?? $product->price ?? 0;
+
+                SaleItem::create([
+                    'sale_id' => $sale->id,
+                    'product_id' => $itemData['product_id'],
+                    'quantity' => $itemData['quantity'],
+                    'unit_price' => $unitPrice,
+                    'discount' => $itemData['discount'] ?? 0,
+                    'notes' => $itemData['notes'] ?? null
+                ]);
+            }
+
+            // Calculate totals
+            $sale->calculateTotals();
+
+            // Load relationships for response
+            $sale->load(['customer', 'items.product']);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Venda criada com sucesso',
+                'data' => new SaleResource($sale)
+            ], 201);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error creating sale: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao criar venda: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function show(Sale $sale): JsonResponse
     {
-        $sale->load('customer');
+        $sale->load(['customer', 'items.product']);
 
         return response()->json([
             'success' => true,
-            'data' => $sale
+            'data' => new SaleResource($sale)
         ]);
     }
 
@@ -96,31 +155,100 @@ class SalesController extends Controller
     {
         $validated = $request->validate([
             'customer_id' => 'sometimes|exists:customers,id',
-            'price' => 'sometimes|numeric|min:0',
             'shipping' => 'sometimes|numeric|min:0',
+            'discount_total' => 'sometimes|numeric|min:0',
+            'tax_total' => 'sometimes|numeric|min:0',
             'status' => 'sometimes|in:pago,pendente,cancelado',
             'payment_method' => 'sometimes|in:mastercard,visa,pix,boleto',
-            'sale_date' => 'sometimes|date'
+            'sale_date' => 'sometimes|date',
+            'notes' => 'sometimes|nullable|string',
+            'items' => 'sometimes|array|min:1',
+            'items.*.id' => 'sometimes|exists:sale_items,id',
+            'items.*.product_id' => 'required_with:items|exists:products,id',
+            'items.*.quantity' => 'required_with:items|integer|min:1',
+            'items.*.unit_price' => 'sometimes|numeric|min:0',
+            'items.*.discount' => 'sometimes|numeric|min:0',
+            'items.*.notes' => 'sometimes|nullable|string'
         ]);
 
-        $sale->update($validated);
-        $sale->load('customer');
+        try {
+            DB::beginTransaction();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Venda atualizada com sucesso',
-            'data' => $sale
-        ]);
+            // Update sale basic info
+            $sale->update(collect($validated)->except('items')->toArray());
+
+            // Update items if provided
+            if (isset($validated['items'])) {
+                // Delete existing items
+                $sale->items()->delete();
+
+                // Create new items
+                foreach ($validated['items'] as $itemData) {
+                    $product = Product::find($itemData['product_id']);
+                    $unitPrice = $itemData['unit_price'] ?? $product->price ?? 0;
+
+                    SaleItem::create([
+                        'sale_id' => $sale->id,
+                        'product_id' => $itemData['product_id'],
+                        'quantity' => $itemData['quantity'],
+                        'unit_price' => $unitPrice,
+                        'discount' => $itemData['discount'] ?? 0,
+                        'notes' => $itemData['notes'] ?? null
+                    ]);
+                }
+
+                // Recalculate totals
+                $sale->calculateTotals();
+            }
+
+            $sale->load(['customer', 'items.product']);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Venda atualizada com sucesso',
+                'data' => new SaleResource($sale)
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error updating sale: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao atualizar venda: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function destroy(Sale $sale): JsonResponse
     {
-        $sale->delete();
+        try {
+            DB::beginTransaction();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Venda excluída com sucesso'
-        ]);
+            // Delete items first (cascade should handle this, but being explicit)
+            $sale->items()->delete();
+
+            // Delete sale
+            $sale->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Venda excluída com sucesso'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error deleting sale: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao excluir venda: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function metrics(): JsonResponse
@@ -134,9 +262,11 @@ class SalesController extends Controller
         $currentMetrics = Sale::whereMonth('sale_date', $currentMonth)
             ->whereYear('sale_date', $currentYear)
             ->selectRaw('
-                SUM(price + shipping) as total_revenue,
+                SUM(total) as total_revenue,
                 COUNT(*) as total_sales,
-                COUNT(DISTINCT customer_id) as total_customers
+                COUNT(DISTINCT customer_id) as total_customers,
+                SUM(subtotal) as subtotal_sum,
+                SUM(shipping) as shipping_sum
             ')
             ->first();
 
@@ -144,7 +274,7 @@ class SalesController extends Controller
         $lastMetrics = Sale::whereMonth('sale_date', $lastMonth)
             ->whereYear('sale_date', $lastMonthYear)
             ->selectRaw('
-                SUM(price + shipping) as total_revenue,
+                SUM(total) as total_revenue,
                 COUNT(*) as total_sales,
                 COUNT(DISTINCT customer_id) as total_customers
             ')
@@ -180,6 +310,10 @@ class SalesController extends Controller
                 'total_customers' => [
                     'value' => $currentMetrics->total_customers ?? 0,
                     'change' => $customersChange
+                ],
+                'breakdown' => [
+                    'subtotal' => number_format($currentMetrics->subtotal_sum ?? 0, 2, ',', '.'),
+                    'shipping' => number_format($currentMetrics->shipping_sum ?? 0, 2, ',', '.')
                 ]
             ]
         ]);
@@ -196,14 +330,14 @@ class SalesController extends Controller
 
     public function export(Request $request): JsonResponse
     {
-        $query = Sale::with('customer');
+        $query = Sale::with(['customer', 'items.product']);
 
         // Apply same filters as index method
         if ($request->has('search') && $request->search) {
             $search = $request->search;
             $query->whereHas('customer', function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%");
-            });
+            })->orWhere('sale_number', 'like', "%{$search}%");
         }
 
         if ($request->has('status') && $request->status) {
@@ -214,10 +348,12 @@ class SalesController extends Controller
 
         $exportData = $sales->map(function ($sale) {
             return [
-                'ID' => $sale->id,
+                'Número da Venda' => $sale->sale_number,
                 'Data' => $sale->sale_date->format('d/m/Y'),
                 'Cliente' => $sale->customer->name,
-                'Preço' => 'R$ ' . number_format($sale->price, 2, ',', '.'),
+                'Qtd Produtos' => $sale->products_count,
+                'Qtd Itens' => $sale->items_count,
+                'Subtotal' => 'R$ ' . number_format($sale->subtotal, 2, ',', '.'),
                 'Frete' => 'R$ ' . number_format($sale->shipping, 2, ',', '.'),
                 'Total' => 'R$ ' . number_format($sale->total, 2, ',', '.'),
                 'Status' => ucfirst($sale->status),

@@ -7,59 +7,80 @@ use Illuminate\Support\Facades\DB;
 
 class CompleteSeeder extends Seeder
 {
+    /**
+     * Run all seeders in the correct order for the multi-product sales system.
+     */
     public function run()
     {
-        $this->command->info('🚀 Starting complete database seeding...');
+        $this->command->info('🌱 Starting complete database seeding...');
 
-        // Disable foreign key checks
+        // Clear existing data to avoid conflicts
+        $this->command->info('🧹 Cleaning existing data...');
+        $this->clearExistingData();
+
+        // Core data first
+        $this->call([
+            CategorySeeder::class,
+            ProductSeeder::class,
+            CustomerSeeder::class,
+        ]);
+
+        $this->command->info('✅ Core data seeded successfully!');
+
+        // Sales data (includes SaleItems automatically)
+        $this->call([
+            SaleSeeder::class,
+        ]);
+
+        $this->command->info('✅ Sales data seeded successfully!');
+
+        // Final statistics
+        $this->showFinalStats();
+
+        $this->command->info('🎉 Complete seeding finished successfully!');
+    }
+
+    private function clearExistingData()
+    {
+        // Disable foreign key checks temporarily
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
 
-        // Truncate tables in correct order
-        $this->command->info('🗑️  Cleaning existing data...');
+        // Clear tables in correct order (respecting foreign keys)
+        DB::table('sale_items')->truncate();
         DB::table('sales')->truncate();
         DB::table('products')->truncate();
-        DB::table('customers')->truncate();
         DB::table('categories')->truncate();
+        DB::table('customers')->truncate();
 
         // Re-enable foreign key checks
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        $this->command->info('📊 Seeding categories...');
-        $this->call(CategorySeeder::class);
-
-        $this->command->info('👥 Seeding customers...');
-        $this->call(CustomerSeeder::class);
-
-        $this->command->info('📦 Seeding products...');
-        $this->call(ProductSeeder::class);
-
-        $this->command->info('💰 Seeding sales...');
-        $this->call(SaleSeeder::class);
-
-        $this->command->info('🎯 Seeding dashboard test data...');
-        $this->call(DashboardTestSeeder::class);
-
-        $this->command->info('✅ Database seeding completed successfully!');
-
-        // Show final statistics
-        $this->showStatistics();
+        $this->command->info('   ✓ Existing data cleared');
     }
 
-    private function showStatistics()
+    private function showFinalStats()
     {
-        $this->command->info('📈 Final Statistics:');
-        $this->command->info('- Categories: ' . DB::table('categories')->count());
-        $this->command->info('- Products: ' . DB::table('products')->count());
-        $this->command->info('- Customers: ' . DB::table('customers')->count());
-        $this->command->info('- Sales: ' . DB::table('sales')->count());
+        $stats = [
+            'Categories' => \App\Models\Category::count(),
+            'Products' => \App\Models\Product::count(),
+            'Customers' => \App\Models\Customer::count(),
+            'Sales' => \App\Models\Sale::count(),
+            'Sale Items' => \App\Models\SaleItem::count(),
+        ];
 
-        $totalRevenue = DB::table('sales')
-            ->where('status', 'pago')
-            ->sum(DB::raw('price + shipping'));
+        $this->command->info("\n📊 Final Database Statistics:");
+        foreach ($stats as $model => $count) {
+            $this->command->info("   {$model}: {$count}");
+        }
 
-        $this->command->info('- Total Revenue: R$ ' . number_format($totalRevenue, 2, ',', '.'));
+        // Revenue stats
+        $totalRevenue = \App\Models\Sale::where('status', 'pago')->sum('total');
+        $avgSaleValue = \App\Models\Sale::where('status', 'pago')->avg('total');
+        $totalItems = \App\Models\SaleItem::sum('quantity');
 
-        $this->command->info('🎉 Ready to test your dashboard API!');
-        $this->command->info('📡 Try: GET /api/dashboard');
+        $this->command->info("\n💰 Revenue Statistics:");
+        $this->command->info("   Total Revenue: R$ " . number_format($totalRevenue, 2, ',', '.'));
+        $this->command->info("   Average Sale: R$ " . number_format($avgSaleValue, 2, ',', '.'));
+        $this->command->info("   Total Items Sold: " . number_format($totalItems));
     }
 }

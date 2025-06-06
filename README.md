@@ -1,4 +1,6 @@
+`sail artisan db:seed --class=CleanDatabaseSeeder` <br>
 `sail artisan db:seed --class=CompleteSeeder` <br>
+
 
 `GET /api/sales` - List sales with pagination and filters <br>
 `POST /api/sales` - Create new sale <br>
